@@ -109,8 +109,8 @@ function setupIpc(cli) {
     ipcMain.handle('save-file', async (_event, { data, filename }) => {
         try {
             const buffer = Buffer.from(data, 'base64');
-            const sanitized = path.basename(filename || 'heightmap.png');
-            const outputPath = path.resolve(process.cwd(), sanitized);
+            const outputPath = path.isAbsolute(filename) ? filename : path.resolve(process.cwd(), filename || 'heightmap.png');
+            fs.mkdirSync(path.dirname(outputPath), { recursive: true });
             fs.writeFileSync(outputPath, buffer);
             return outputPath;
         } catch (e) {
@@ -134,8 +134,9 @@ function setupIpc(cli) {
 
         if (cli.export && metadata.imageData) {
             const buffer = Buffer.from(metadata.imageData, 'base64');
-            const sanitized = path.basename(cli.output || `heightmap-${Date.now()}.png`);
-            const resolved = path.resolve(process.cwd(), sanitized);
+            const outputFile = cli.output || `heightmap-${Date.now()}.png`;
+            const resolved = path.isAbsolute(outputFile) ? outputFile : path.resolve(process.cwd(), outputFile);
+            fs.mkdirSync(path.dirname(resolved), { recursive: true });
             fs.writeFileSync(resolved, buffer);
             if (!cli.json) {
                 process.stdout.write(`Exported: ${resolved}\n`);
