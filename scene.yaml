@@ -5,14 +5,14 @@ sources:
         max_zoom: 14
         tile_size: 512
         url_params:
-            api_key: dmlO1fVQRPKI-GrVIYJ1YA
+            api_key: __HEIGHTMAPPER_API_KEY__
     mapzen:
         type: MVT
         url: https://tile.nextzen.org/tilezen/vector/v1/512/all/{z}/{x}/{y}.mvt
         max_zoom: 16
         tile_size: 512
         url_params:
-            api_key: dmlO1fVQRPKI-GrVIYJ1YA
+            api_key: __HEIGHTMAPPER_API_KEY__
 styles:
     hillshade:
         base: raster

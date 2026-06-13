@@ -1,0 +1,47 @@
+{
+  "name": "heightmapper",
+  "version": "2.0.0",
+  "description": "Electron-based interactive grayscale heightmap generator using Nextzen terrain tiles",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win",
+    "build:dir": "electron-builder --win --dir",
+    "clean": "rmdir /s /q dist 2>nul & exit 0"
+  },
+  "build": {
+    "appId": "com.heightmapper.app",
+    "productName": "Heightmapper",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "app.js",
+      "index.html",
+      "scene.yaml",
+      "lib/**/*",
+      "export_to_blender.py",
+      "exporting_to_blender.md",
+      "export_with_blender_script.md"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": null
+    }
+  },
+  "license": "MIT",
+  "dependencies": {
+    "leaflet": "^1.9.4"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.0"
+  }
+}

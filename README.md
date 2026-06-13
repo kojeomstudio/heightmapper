@@ -1,54 +1,180 @@
-# heightmapper
+# Heightmapper (Electron Edition)
 
-http://tangrams.github.io/heightmapper
+Interactive grayscale heightmap generator using Nextzen global terrain tiles. Electron-based desktop application with GUI and headless CLI modes.
 
-Heightmapper is an interactive grayscale heightmap browser, which can generate heightmaps for use in 3D applications. By default, it "auto-exposes" the display so that the highest visible elevation in the current view will be white, and the lowest will be black.
+Based on [Tangram Heightmapper](http://tangrams.github.io/heightmapper) by Mapzen.
 
-Uses [Mapzen's](http://mapzen.com/tangrams/tangram) global [elevation service](https://mapzen.com/blog/elevation).
+## Features
 
-<img width="900" alt="screen shot 2016-07-19 at 11 17 17 am" src="https://cloud.githubusercontent.com/assets/459970/16955404/6e9ec51e-4da2-11e6-97e1-d43d2682e07b.png">
+- **Interactive GUI**: Browse real-world elevation data on an interactive map
+- **Auto-exposure**: Automatically adjusts elevation range for optimal grayscale output
+- **PNG Export**: Save heightmaps for use as displacement maps in 3D applications
+- **High-res Render**: Multi-cell rendering up to 8x zoom multiplier
+- **Headless CLI**: Automated heightmap export from command line
+- **AI Agent JSON**: Programmatic metadata output for automated pipelines
+- **Blender Pipeline**: Included script for direct import into Blender
 
-### Usage
+## Quick Start
 
-- Uncheck "auto-expose" to set min and max height levels manually.
-- Check "show lines" and "show labels" to see more map data.
-- Click "export" to open the current view as an image in a new tab - "Save As" to save the image to disk.
-- Import the resulting image as a "displacement map" in a 3D application to generate a 3D model of the terrain. ([Here's a tutorial for doing this in Blender.](https://github.com/tangrams/heightmapper/blob/master/exporting_to_blender.md))
-- The "z:x scale factor" describes how "high" the current view is, on the z-axis, in terms of how wide the current view is on the x-axis. Multiplying this scale factor by the width of a 3D mesh in units x will tell you how high in units z your mesh should be after displacement in order to be true-scale.
-- Press the "h" key to toggle UI visibility.
+### Install
 
-### Rendering
+```bash
+npm install
+```
 
-- Render Multiplier (1 - 8) will split the view up into that number of cells on the x and y axis. i.e., a Render Multiplier of 4 will render a 4x4 grid.
-- Render Name is the name of the output file you want.
-- render will automatically zoom to each area and stitch together a high quality render, then save the render as `{render name}.png` to your downloads.
+### Run (GUI Mode)
 
-> This comes with a gotcha: the map must take up the entire view (no whitespace above or below) for the renderer to work properly.
->
-> Do not resize the view or move the map during render as this will interfere with the render process.
+```bash
+npm start
+```
 
-### Todo
+Or double-click `start.bat` on Windows.
 
-- add a GeoTIFF export option which includes metadata
-- fix Render Multiplier issue when the view bounds exceeds the tile latitude limit.
-- **Super Extra Credit:** further export options including lat/lon bounding boxes, country/boundary masking using OSM vector tiles
+### Build Distributable
 
-### To run locally:
+```bash
+npm run build
+```
 
-Start a web server in the repo's directory:
+Or double-click `build.bat` on Windows.
 
-    python -m SimpleHTTPServer 8000
-    
-If that doesn't work, try:
+## CLI / Headless Mode
 
-    python -m http.server 8000
+For automated workflows and AI agent integration:
 
-If running this produces CORS errors on your local machine, try:
+```bash
+# Export Seoul heightmap
+npx electron . --export --lat 37.5665 --lng 126.978 --zoom 10 -o seoul.png
 
-    python run-server.py
+# Get metadata as JSON (for AI agents)
+npx electron . --json --lat 37.5665 --lng 126.978 --zoom 10
 
-or
+# Export + JSON together
+npx electron . --export --json --lat 37.5665 --lng 126.978 --zoom 12 -o seoul_hd.png
+```
 
-    python3 run-server.py (on mac)
-    
-Then navigate to: [http://localhost:8000](http://localhost:8000)
+Or use `run-cli.bat`:
+
+```cmd
+run-cli.bat --export --lat 37.5665 --lng 126.978 --zoom 10 -o seoul.png
+```
+
+### CLI Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--export` | Export heightmap as PNG | - |
+| `--json` | Output metadata as JSON to stdout | - |
+| `--lat FLOAT` | Center latitude | 0 |
+| `--lng FLOAT` | Center longitude | 0 |
+| `--zoom FLOAT` | Zoom level (1-14) | 2 |
+| `--min FLOAT` | Min elevation in meters | 0 |
+| `--max FLOAT` | Max elevation in meters | 8848 |
+| `-o, --output FILE` | Output filename | auto-generated |
+| `--width INT` | Render width in pixels | 1280 |
+| `--height INT` | Render height in pixels | 720 |
+| `--timeout INT` | Timeout in milliseconds | 60000 |
+| `--api-key KEY` | Nextzen API key | env or built-in |
+
+### JSON Output Example
+
+```json
+{
+  "status": "ok",
+  "bounds": {
+    "north": 37.601,
+    "south": 37.532,
+    "east": 127.024,
+    "west": 126.932
+  },
+  "elevation": {
+    "min": 0,
+    "max": 342.5
+  },
+  "scaleFactor": "0.000087",
+  "dimensions": {
+    "width": 1280,
+    "height": 720
+  },
+  "center": {
+    "lat": 37.5665,
+    "lng": 126.978
+  },
+  "zoom": 10
+}
+```
+
+## AI Agent Integration
+
+The headless JSON mode is designed for AI agent workflows:
+
+1. Agent requests elevation metadata: `--json --lat X --lng Y --zoom Z`
+2. Parse JSON output for bounds, elevation range, scale factor
+3. Optionally export PNG: `--export --json --lat X --lng Y --zoom Z -o output.png`
+4. Use the heightmap as displacement map in 3D pipelines
+
+## GUI Usage
+
+- **Auto-expose**: Automatically adjusts display range (on by default)
+- **Export**: Click to save current view as PNG
+- **Render**: High-resolution multi-cell render (set multiplier first)
+- **h key**: Toggle UI visibility
+- **ESC**: Close help dialog
+
+## Using Heightmaps in 3D
+
+See [exporting_to_blender.md](exporting_to_blender.md) for a Blender tutorial, or use the included `export_to_blender.py` script:
+
+```bash
+blender --python export_to_blender.py -- heightmap.png 0.000087
+```
+
+## Project Structure
+
+```
+├── main.js              # Electron main process (CLI parser + window management)
+├── preload.js           # Electron preload (IPC bridge)
+├── app.js               # Renderer: map, auto-exposure, Tangram integration
+├── index.html           # Main HTML
+├── scene.yaml           # Tangram scene config (data sources + shaders)
+├── package.json         # Electron package
+├── lib/
+│   ├── tangram.min.js   # WebGL map renderer
+│   ├── dat.gui.min.js   # GUI controls
+│   ├── FileSaver.js     # File save utility
+│   └── leaflet-hash.js  # URL hash state
+├── export_to_blender.py # Blender import script
+├── start.bat            # Windows: start GUI
+├── build.bat            # Windows: build distributable
+└── run-cli.bat          # Windows: CLI headless mode
+```
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `HEIGHTMAPPER_API_KEY` | Nextzen API key (required for tiles) | Built-in key (origin-restricted) |
+
+> **Note:** The built-in API key is origin-restricted. For full functionality, [get a free Nextzen API key](https://developers.nextzen.org/) and set it via:
+> ```bash
+> set HEIGHTMAPPER_API_KEY=your_key_here
+> npm start
+> ```
+> Or via CLI: `npx electron . --api-key your_key_here`
+
+## Data Sources
+
+- **Terrain tiles**: [Nextzen Terrarium](https://tile.nextzen.org/tilezen/terrain/v1/512/terrarium/{z}/{x}/{y}.png)
+- **Vector tiles**: [Nextzen MVT](https://tile.nextzen.org/tilezen/vector/v1/512/all/{z}/{x}/{y}.mvt)
+- **Elevation encoding**: Terrarium format — `height = (R*256 + G + B/256) * 255 - 32768` meters
+
+## Tech Stack
+
+- **Runtime**: Electron (Chromium)
+- **Map**: Leaflet.js
+- **Rendering**: Tangram (WebGL)
+- **Data**: Nextzen terrain + vector tiles
+
+## License
+
+MIT License — Copyright (c) 2014 Mapzen. See [LICENSE](LICENSE).
