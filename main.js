@@ -80,9 +80,11 @@ function createWindow(cli) {
     };
 
     if (cli.headless) {
-        windowOpts.x = -9999;
-        windowOpts.y = -9999;
+        windowOpts.x = 0;
+        windowOpts.y = 0;
         windowOpts.frame = false;
+        windowOpts.transparent = true;
+        windowOpts.skipTaskbar = true;
     }
 
     mainWindow = new BrowserWindow(windowOpts);

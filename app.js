@@ -59,19 +59,6 @@ map = (function () {
     window.__HEIGHTMAPPER_API_KEY = query.api_key;
   }
 
-  function patchSceneYamlApiKey() {
-    var apiKey = query.api_key || 'dmlO1fVQRPKI-GrVIYJ1YA';
-    var sceneConfig = layer.scene.config;
-    if (sceneConfig && sceneConfig.sources) {
-      Object.keys(sceneConfig.sources).forEach(function(key) {
-        if (sceneConfig.sources[key].url_params && sceneConfig.sources[key].url_params.api_key) {
-          sceneConfig.sources[key].url_params.api_key = apiKey;
-        }
-      });
-      layer.scene.updateConfig();
-    }
-  }
-
   if (query.min) global_min = parseFloat(query.min);
   if (query.max) global_max = parseFloat(query.max);
 
@@ -177,8 +164,8 @@ map = (function () {
       done = true;
       spread = 2;
 
-      console.log('[heightmapper] auto-exposure converged:', gui.u_min, '-', gui.u_max);
-      if (isHeadless && scene_loaded) {
+      if (isHeadless && scene_loaded && !window.__headlessExported) {
+        window.__headlessExported = true;
         triggerHeadlessExport();
       }
       return false;
@@ -539,13 +526,10 @@ map = (function () {
 
   window.addEventListener('load', function () {
     layer.on('init', function() {
-      console.log('[heightmapper] Tangram layer initialized, headless=' + isHeadless);
-      patchSceneYamlApiKey();
       if (!isHeadless) {
         gui = new dat.GUI({ autoPlace: true, hideable: true, width: 300 });
       }
       addGUI();
-      console.log('[heightmapper] GUI ready, autoexpose=' + (gui ? gui.autoexpose : 'N/A'));
       scene.subscribe({ view_complete: function() {} });
       scene_loaded = true;
 
