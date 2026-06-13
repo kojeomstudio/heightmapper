@@ -29,7 +29,7 @@ if "%~1"=="" (
     echo   -o, --output FILE  Output filename (default: auto-generated)
     echo   --width INT        Window width in pixels (default: 1280)
     echo   --height INT       Window height in pixels (default: 720)
-    echo   --timeout INT      Timeout in ms (default: 30000)
+    echo   --timeout INT      Timeout in ms (default: 60000)
     echo.
     echo Examples:
     echo   run-cli.bat --export --lat 37.5665 --lng 126.978 --zoom 10 -o seoul.png

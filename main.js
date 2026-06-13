@@ -1,8 +1,7 @@
-const { app, BrowserWindow, ipcMain, protocol } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
-const API_KEY = process.env.HEIGHTMAPPER_API_KEY || 'dmlO1fVQRPKI-GrVIYJ1YA';
 let mainWindow;
 
 function parseCliArgs() {
@@ -20,7 +19,6 @@ function parseCliArgs() {
         width: 1280,
         height: 720,
         timeout: 60000,
-        apiKey: null,
     };
 
     for (let i = 0; i < args.length; i++) {
@@ -28,16 +26,15 @@ function parseCliArgs() {
             case '--headless': parsed.headless = true; break;
             case '--json': parsed.json = true; break;
             case '--export': parsed.export = true; break;
-            case '--lat': parsed.lat = parseFloat(args[++i]); break;
-            case '--lng': parsed.lng = parseFloat(args[++i]); break;
-            case '--zoom': parsed.zoom = parseFloat(args[++i]); break;
-            case '--min': parsed.minElev = parseFloat(args[++i]); break;
-            case '--max': parsed.maxElev = parseFloat(args[++i]); break;
-            case '--output': case '-o': parsed.output = args[++i]; break;
-            case '--width': parsed.width = parseInt(args[++i]); break;
-            case '--height': parsed.height = parseInt(args[++i]); break;
-            case '--timeout': parsed.timeout = parseInt(args[++i]); break;
-            case '--api-key': parsed.apiKey = args[++i]; break;
+            case '--lat': if (i + 1 < args.length) parsed.lat = parseFloat(args[++i]); break;
+            case '--lng': if (i + 1 < args.length) parsed.lng = parseFloat(args[++i]); break;
+            case '--zoom': if (i + 1 < args.length) parsed.zoom = parseFloat(args[++i]); break;
+            case '--min': if (i + 1 < args.length) parsed.minElev = parseFloat(args[++i]); break;
+            case '--max': if (i + 1 < args.length) parsed.maxElev = parseFloat(args[++i]); break;
+            case '--output': case '-o': if (i + 1 < args.length) parsed.output = args[++i]; break;
+            case '--width': if (i + 1 < args.length) parsed.width = parseInt(args[++i]); break;
+            case '--height': if (i + 1 < args.length) parsed.height = parseInt(args[++i]); break;
+            case '--timeout': if (i + 1 < args.length) parsed.timeout = parseInt(args[++i]); break;
         }
     }
 
@@ -48,11 +45,8 @@ function parseCliArgs() {
     return parsed;
 }
 
-const effectiveApiKey = (cli) => cli.apiKey || API_KEY;
-
 function buildRendererUrl(cli) {
     const params = new URLSearchParams();
-    params.set('api_key', effectiveApiKey(cli));
     if (cli.lat !== null) params.set('lat', cli.lat);
     if (cli.lng !== null) params.set('lng', cli.lng);
     if (cli.zoom !== null) params.set('zoom', cli.zoom);
@@ -63,7 +57,11 @@ function buildRendererUrl(cli) {
     if (cli.export) params.set('export', '1');
     if (cli.output) params.set('output', cli.output);
 
-    return `file://${path.join(__dirname, 'index.html')}?${params.toString()}`;
+    const indexPath = path.join(__dirname, 'index.html');
+    const fileUrl = new URL('file:///');
+    fileUrl.pathname = indexPath.replace(/\\/g, '/');
+    fileUrl.search = params.toString();
+    return fileUrl.toString();
 }
 
 function createWindow(cli) {
@@ -94,24 +92,25 @@ function createWindow(cli) {
 
     if (cli.headless) {
         mainWindow.webContents.on('console-message', (_event, level, message) => {
-            process.stderr.write(`[renderer] ${message}\n`);
-        });
-        mainWindow.webContents.on('did-finish-load', () => {
-            mainWindow.webContents.send('headless-config', cli);
+            if (level >= 2) {
+                process.stderr.write(`[renderer] ${message}\n`);
+            }
         });
     }
 }
 
 function setupIpc(cli) {
     ipcMain.handle('save-file', async (_event, { data, filename }) => {
-        const buffer = Buffer.from(data, 'base64');
-        const outputPath = path.resolve(process.cwd(), filename);
-        fs.writeFileSync(outputPath, buffer);
-        return outputPath;
+        try {
+            const buffer = Buffer.from(data, 'base64');
+            const sanitized = path.basename(filename || 'heightmap.png');
+            const outputPath = path.resolve(process.cwd(), sanitized);
+            fs.writeFileSync(outputPath, buffer);
+            return outputPath;
+        } catch (e) {
+            throw new Error(`Failed to save file: ${e.message}`);
+        }
     });
-
-    ipcMain.handle('get-cli-args', () => cli);
-    ipcMain.handle('get-api-key', () => effectiveApiKey(cli));
 
     ipcMain.on('render-complete', (_event, metadata) => {
         if (cli.json) {
@@ -129,8 +128,8 @@ function setupIpc(cli) {
 
         if (cli.export && metadata.imageData) {
             const buffer = Buffer.from(metadata.imageData, 'base64');
-            const outputPath = cli.output || `heightmap-${Date.now()}.png`;
-            const resolved = path.resolve(process.cwd(), outputPath);
+            const sanitized = path.basename(cli.output || `heightmap-${Date.now()}.png`);
+            const resolved = path.resolve(process.cwd(), sanitized);
             fs.writeFileSync(resolved, buffer);
             if (!cli.json) {
                 process.stdout.write(`Exported: ${resolved}\n`);
@@ -138,13 +137,13 @@ function setupIpc(cli) {
         }
 
         if (cli.headless) {
-            setTimeout(() => app.quit(), 500);
+            setTimeout(() => app.exit(0), 500);
         }
     });
 
     ipcMain.on('render-error', (_event, errorMsg) => {
         process.stderr.write(`Error: ${errorMsg}\n`);
-        app.quit(1);
+        app.exit(1);
     });
 }
 
@@ -155,7 +154,7 @@ app.whenReady().then(() => {
     const headlessTimeout = setTimeout(() => {
         if (cli.headless) {
             process.stderr.write('Timeout: rendering did not complete in time\n');
-            app.quit(1);
+            app.exit(1);
         }
     }, cli.timeout);
 
@@ -164,11 +163,13 @@ app.whenReady().then(() => {
 
     createWindow(cli);
 
-    app.on('activate', () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
-            createWindow(cli);
-        }
-    });
+    if (!cli.headless) {
+        app.on('activate', () => {
+            if (BrowserWindow.getAllWindows().length === 0) {
+                createWindow(cli);
+            }
+        });
+    }
 });
 
 app.on('window-all-closed', () => {

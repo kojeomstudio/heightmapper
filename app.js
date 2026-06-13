@@ -55,10 +55,6 @@ map = (function () {
     map_start_location = [url_hash[1], url_hash[2], url_hash[0]].map(Number);
   }
 
-  if (query.api_key) {
-    window.__HEIGHTMAPPER_API_KEY = query.api_key;
-  }
-
   if (query.min) global_min = parseFloat(query.min);
   if (query.max) global_max = parseFloat(query.max);
 
@@ -127,14 +123,13 @@ map = (function () {
 
   function start_analysis() {
     var levels = analyse();
+    if (!levels) return;
     diff = levels.max - lastumax;
     if (typeof levels.max !== 'undefined') lastumax = levels.max;
     else diff = 1;
     widening = diff < 0 ? false : true;
-    if (levels) {
-      scene.styles.hillshade.shaders.uniforms.u_min = levels.min;
-      scene.styles.hillshade.shaders.uniforms.u_max = levels.max;
-    }
+    scene.styles.hillshade.shaders.uniforms.u_min = levels.min;
+    scene.styles.hillshade.shaders.uniforms.u_max = levels.max;
     scene.requestRedraw();
   }
 
@@ -202,13 +197,10 @@ map = (function () {
 
   async function triggerHeadlessExport() {
     try {
-      var waitMs = 2000;
-      await new Promise(function(r) { setTimeout(r, waitMs); });
-
-      var canvas = scene.canvas;
+      var screenshot = await scene.screenshot();
       var imageData;
-      if (canvas.toDataURL) {
-        imageData = canvas.toDataURL('image/png').split(',')[1];
+      if (screenshot && screenshot.url) {
+        imageData = screenshot.url.split(',')[1];
       }
 
       var center = map.getCenter();
@@ -227,8 +219,8 @@ map = (function () {
         minElev: gui ? gui.u_min : 0,
         maxElev: gui ? gui.u_max : 8848,
         scaleFactor: gui ? gui.scaleFactor : '1',
-        width: canvas.width,
-        height: canvas.height,
+        width: scene.canvas.width,
+        height: scene.canvas.height,
         imageData: isExport ? imageData : null,
       };
 
@@ -246,7 +238,7 @@ map = (function () {
   var scene = layer.scene;
   window.scene = scene;
 
-  map.setView(map_start_location.slice(0, 3), map_start_location[2]);
+  map.setView(map_start_location.slice(0, 2), map_start_location[2]);
 
   let hash = new L.Hash(map);
 
@@ -302,14 +294,10 @@ map = (function () {
     });
 
     gui.map_lines = false;
-    gui.add(gui, 'map_lines').name("map lines").onChange(function(value) {
-      toggleLines(value);
-    });
+    gui.add(gui, 'map_lines').name("map lines (unavailable)");
 
     gui.map_labels = false;
-    gui.add(gui, 'map_labels').name("map labels").onChange(function(value) {
-      toggleLabels(value);
-    });
+    gui.add(gui, 'map_labels').name("map labels (unavailable)");
 
     gui.export = function () {
       return doExport();

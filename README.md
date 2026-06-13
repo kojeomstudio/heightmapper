@@ -67,14 +67,13 @@ run-cli.bat --export --lat 37.5665 --lng 126.978 --zoom 10 -o seoul.png
 | `--json` | Output metadata as JSON to stdout | - |
 | `--lat FLOAT` | Center latitude | 0 |
 | `--lng FLOAT` | Center longitude | 0 |
-| `--zoom FLOAT` | Zoom level (1-14) | 2 |
+| `--zoom FLOAT` | Zoom level (1-15) | 2 |
 | `--min FLOAT` | Min elevation in meters | 0 |
 | `--max FLOAT` | Max elevation in meters | 8848 |
 | `-o, --output FILE` | Output filename | auto-generated |
 | `--width INT` | Render width in pixels | 1280 |
 | `--height INT` | Render height in pixels | 720 |
 | `--timeout INT` | Timeout in milliseconds | 60000 |
-| `--api-key KEY` | Nextzen API key | env or built-in |
 
 ### JSON Output Example
 
@@ -151,21 +150,11 @@ blender --python export_to_blender.py -- heightmap.png 0.000087
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `HEIGHTMAPPER_API_KEY` | Nextzen API key (required for tiles) | Built-in key (origin-restricted) |
-
-> **Note:** The built-in API key is origin-restricted. For full functionality, [get a free Nextzen API key](https://developers.nextzen.org/) and set it via:
-> ```bash
-> set HEIGHTMAPPER_API_KEY=your_key_here
-> npm start
-> ```
-> Or via CLI: `npx electron . --api-key your_key_here`
+No environment variables required. Uses free AWS S3 elevation tiles (no API key needed).
 
 ## Data Sources
 
-- **Terrain tiles**: [Nextzen Terrarium](https://tile.nextzen.org/tilezen/terrain/v1/512/terrarium/{z}/{x}/{y}.png)
-- **Vector tiles**: [Nextzen MVT](https://tile.nextzen.org/tilezen/vector/v1/512/all/{z}/{x}/{y}.mvt)
+- **Terrain tiles**: [AWS S3 Elevation Tiles](https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png) — free, no API key required
 - **Elevation encoding**: Terrarium format — `height = (R*256 + G + B/256) * 255 - 32768` meters
 
 ## Tech Stack
