@@ -57,6 +57,8 @@ map = (function () {
 
   if (query.min) global_min = parseFloat(query.min);
   if (query.max) global_max = parseFloat(query.max);
+  var useAutoexpose = query.autoexpose !== '0';
+  var useOceans = query.oceans === '1';
 
   var isHeadless = query.headless === '1';
   var isJson = query.json === '1';
@@ -245,8 +247,34 @@ map = (function () {
   var gui;
   function addGUI () {
     if (isHeadless) {
-      window.gui = { autoexpose: true, u_max: global_max, u_min: global_min, scaleFactor: '1', include_oceans: false };
+      window.gui = {
+        autoexpose: useAutoexpose,
+        u_max: global_max,
+        u_min: useOceans ? -11000 : global_min,
+        scaleFactor: '1',
+        include_oceans: useOceans,
+      };
       gui = window.gui;
+
+      if (!useAutoexpose) {
+        scene.styles.hillshade.shaders.uniforms.u_min = gui.u_min;
+        scene.styles.hillshade.shaders.uniforms.u_max = gui.u_max;
+        done = true;
+        scene_loaded = true;
+        if ((isExport || isJson) && !window.__headlessExported) {
+          window.__headlessExported = true;
+          scene.requestRedraw();
+          setTimeout(function() {
+            try {
+              var zrange = gui.u_max - gui.u_min;
+              if (scene.view && scene.view.size && scene.view.size.meters) {
+                gui.scaleFactor = (zrange / scene.view.size.meters.x) + '';
+              }
+            } catch(e) {}
+            triggerHeadlessExport();
+          }, 3000);
+        }
+      }
       return;
     }
 

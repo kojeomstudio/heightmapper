@@ -15,6 +15,8 @@ function parseCliArgs() {
         zoom: null,
         minElev: 0,
         maxElev: 8848,
+        autoExpose: true,
+        includeOceans: false,
         output: null,
         width: 1280,
         height: 720,
@@ -31,6 +33,8 @@ function parseCliArgs() {
             case '--zoom': if (i + 1 < args.length) parsed.zoom = parseFloat(args[++i]); break;
             case '--min': if (i + 1 < args.length) parsed.minElev = parseFloat(args[++i]); break;
             case '--max': if (i + 1 < args.length) parsed.maxElev = parseFloat(args[++i]); break;
+            case '--no-autoexpose': parsed.autoExpose = false; break;
+            case '--include-oceans': parsed.includeOceans = true; break;
             case '--output': case '-o': if (i + 1 < args.length) parsed.output = args[++i]; break;
             case '--width': if (i + 1 < args.length) parsed.width = parseInt(args[++i]); break;
             case '--height': if (i + 1 < args.length) parsed.height = parseInt(args[++i]); break;
@@ -52,6 +56,8 @@ function buildRendererUrl(cli) {
     if (cli.zoom !== null) params.set('zoom', cli.zoom);
     if (cli.minElev !== 0) params.set('min', cli.minElev);
     if (cli.maxElev !== 8848) params.set('max', cli.maxElev);
+    params.set('autoexpose', cli.autoExpose ? '1' : '0');
+    params.set('oceans', cli.includeOceans ? '1' : '0');
     if (cli.headless) params.set('headless', '1');
     if (cli.json) params.set('json', '1');
     if (cli.export) params.set('export', '1');

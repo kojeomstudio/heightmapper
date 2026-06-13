@@ -70,6 +70,8 @@ run-cli.bat --export --lat 37.5665 --lng 126.978 --zoom 10 -o seoul.png
 | `--zoom FLOAT` | Zoom level (1-15) | 2 |
 | `--min FLOAT` | Min elevation in meters | 0 |
 | `--max FLOAT` | Max elevation in meters | 8848 |
+| `--no-autoexpose` | Disable auto-exposure (use --min/--max as fixed range) | off |
+| `--include-oceans` | Include ocean depth (negative elevations) | off |
 | `-o, --output FILE` | Output filename | auto-generated |
 | `--width INT` | Render width in pixels | 1280 |
 | `--height INT` | Render height in pixels | 720 |
